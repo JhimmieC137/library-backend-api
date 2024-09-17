@@ -51,6 +51,7 @@ class TransactionRepository:
             self.db.refresh(new_transaction)
         
         except:
+            self.db.rollback()
             raise InternalServerErrorException("Something went wrong creating the transaction")
         
         return new_transaction
@@ -142,3 +143,21 @@ class BookRepository:
         self.db.refresh(new_book)
         
         return new_book
+    
+    
+    async def delete_book(self, book_id: UUID) -> Book:
+        book: Book = self.db.query(Book).filter(Book.id == book_id).first()
+        
+        if book is None:
+            raise DuplicateValueException("Book not found!")
+        elif book and book.is_deleted:
+            raise BadRequestException("Book is already deleted!")
+        
+        try:
+            book.is_deleted = True
+            self.db.commit()
+            
+        except:
+            self.db.rolback()
+            raise InternalServerErrorException("Something went wrong removing book from library")
+            

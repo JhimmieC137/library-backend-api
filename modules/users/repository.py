@@ -27,7 +27,6 @@ class UserRepository:
         if user:
             raise DuplicateEmailException("Email taken")
         
-        # Hash the password
         payload.email = payload.email.lower()
         new_user = User(**payload.dict())
 
@@ -120,4 +119,18 @@ class UserRepository:
         
         return user
         
+        
+    async def get_user_list(self, page: int, limit: int, search: str) -> tuple[List[User], int]:
+        skip = (page - 1) * limit
+        user_query = self.db.query(User)\
+                    .filter(or_(
+                        User.first_name.ilike(f"%{search}%"),
+                        User.last_name.ilike(f"%{search}%"),
+                        User.email.ilike(f"%{search}%"),
+                    )).filter(User.is_active == True)
+        
+        user_count: int = user_query.count()
+        user: List[User] = user_query.order_by(User.created_at.desc()).limit(limit).offset(skip).all()
+        
+        return user, user_count
         

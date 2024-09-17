@@ -1,13 +1,13 @@
 version: '3.9'
 
 services:
-  cowry-api:
+  cowry-admin-api:
     build:
       context: .
       dockerfile: docker/api/Dockerfile
     working_dir: /app
-    container_name: cowry-api
-    hostname: cowry-api
+    container_name: cowry-admin-api
+    hostname: cowry-admin-api
     ports:
       - '8000:8000'
     networks:

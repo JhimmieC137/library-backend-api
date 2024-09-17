@@ -143,14 +143,12 @@ async def retrieve_book(
 
 
 
-@router.delete('/books/{book_id}', status_code=status.HTTP_201_CREATED, response_model=CustomResponse[BaseBook], tags=["Books"])
+@router.delete('/books/{book_id}', status_code=status.HTTP_204_NO_CONTENT, tags=["Books"])
 async def remove_book(
-    payload: CreateBook,
-) -> CustomResponse[BaseBook]:
+    book_id: Annotated[UUID, Path(title="The ID of the Book")], 
+):
     try:
-        new_book = await bookRepo.create_book(payload=payload)
-
-        return  {"message": "Book created successfully", "data": new_book}
+        await bookRepo.delete_book(book_id=book_id)
     
     except Exception as error:
         raise error

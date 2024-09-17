@@ -42,20 +42,39 @@ async def create_user(
         raise error
 
 
-@router.post("/details", response_model=CustomResponse[BaseUser])
-async def request_user_details(
-    payload: FetchUserSchema,
-) -> CustomResponse[BaseUser]:
+
+@router.get("/", response_model=CustomListResponse[BaseUser])
+async def fetch_users(
+    limit: int = 10, page: int = 1, search: str = '',
+) -> CustomListResponse[BaseUser]:
     """
     Fetch user's details/profile 
     """
     try:
-        user = await userRepo.get_user_by_email(email=payload.email)
+        users, user_count = await userRepo.get_user_list(limit=limit, page=page, search=search)
 
-        return {'message': 'User details retrieved successfully', 'data': user}
+        return {'message': 'Users list fetched successfully', 'total_count': user_count, 'count': len(users), 'next_page': page + 1,'data': users}
 
     except Exception as error:
         raise error
+
+
+
+@router.get('/{user_id}', response_model=CustomResponse[BaseUser])
+async def retrieve_user(
+    user_id: Annotated[UUID, Path(title="The ID of the User")], 
+) -> CustomResponse[BaseUser]:
+    """
+    Retrieve User
+    """
+    try:
+        user = userRepo.get_user_by_id(user_id=user_id)
+        
+        return {'message': 'User list retrieved successfully', 'data': user}
+    
+    except Exception as error:
+        raise error
+
 
 
 @router.patch('/{user_id}', response_model=CustomResponse[BaseUser])
