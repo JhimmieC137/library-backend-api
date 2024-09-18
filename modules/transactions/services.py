@@ -1,3 +1,4 @@
+import json
 from typing import Annotated, Optional
 from core.helpers.mail_utils import *
 from uuid import UUID
@@ -9,6 +10,7 @@ from core.dependencies.sessions import get_db
 # from core.dependencies.auth import get_current_user
 from core.exceptions import *
 from core.helpers.schemas import CustomListResponse, CustomResponse
+from core.middlewares.messanger import client
 
 from .models import *
 from .schemas import *
@@ -46,9 +48,9 @@ async def create_transaction(
 
 @router.get('/transactions', response_model=CustomListResponse[BaseTransaction], tags=["Transactions"])
 async def fetch_transactions(
-    user_id: Annotated[UUID, Path(title="The ID of the User")], 
+    user_id: Annotated[UUID, Path(title="The ID of the User")] = None, 
     limit: int = 10, page: int = 1, 
-    status: TransactionStatus = TransactionStatus.BORROWING
+    status: TransactionStatus = None
 ) -> CustomListResponse[BaseTransaction]:
     """
     Fetch current user's transactions
@@ -100,16 +102,17 @@ async def register_new_book(
 
 @router.get('/books', response_model=CustomListResponse[BaseBook], tags=["Books"])
 async def fetch_books(
-    current_holder_id: Annotated[UUID, Path(title="The ID of the User")],
+    current_holder_id: Annotated[UUID, Path(title="The ID of the User")] = None,
     limit: int = 10, page: int = 1, search: str = '',
     publishers: str = None,
     status: BookStatus = BookStatus.AVAILABLE,
-    category: BookCategory = BookCategory
+    category: BookCategory = None,
 ) -> CustomListResponse[BaseBook]:
     """
     Fetch list of books
     """
     try:
+        
         books, book_count = await bookRepo.get_book_list(
                                                         page=page, 
                                                         limit=limit, 
@@ -119,7 +122,8 @@ async def fetch_books(
                                                         publishers=publishers,
                                                         user_id=current_holder_id
                                                     )
-        
+        print("Here")
+        client.send_message(json.dumps({"message": "Gume", "number": 5637}))
         return {'message': 'Book list fetched successfully', 'total_count': book_count, 'count': len(books), 'next_page': page + 1,'data': books}
     
     except Exception as error:
@@ -134,7 +138,7 @@ async def retrieve_book(
     Retrieve book
     """
     try:
-        book = bookRepo.get_book_by_id(book_id=book_id)
+        book = await bookRepo.get_book_by_id(book_id=book_id)
         
         return {"message": "Book retrieved successfully", "data": book}
     

@@ -1,4 +1,5 @@
 from enum import Enum
+import threading
 from typing_extensions  import Annotated
 from typing import List
 from starlette.exceptions import HTTPException
@@ -26,6 +27,8 @@ from core.middlewares import (
 # from core.helpers.cache import Cache, RedisBackend, CustomKeyMaker
 from core.exceptions.handler import http_exception_handler, request_validation_exception_handler, unhandled_exception_handler
 from core.middlewares.response_log import log_request_middleware
+from core.middlewares.listener import client
+
 
 
 def init_db(app_: FastAPI) -> None:
@@ -101,6 +104,13 @@ sentry_sdk.init(
     environment=config.ENV,
 )
 
+
+def start_receiving():
+    thread = threading.Thread(target=client.start_consuming)
+    thread.daemon = True
+    thread.start()
+
+
 def create_app() -> FastAPI:
     app_ = FastAPI(
         title="Library Application - Client/Frontend Api",
@@ -117,6 +127,10 @@ def create_app() -> FastAPI:
     init_middleware(app_=app_)
     init_exception_handlers(app_=app_)
     # init_cache()
+    
+    start_receiving()
+    
+
     return app_
 
 

@@ -11,6 +11,10 @@ class Config(BaseSettings):
     DEBUG: bool = True
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8005
+    RABBIT_MQ_USER: str | None = os.environ.get("RABBITMQ_USER")
+    RABBITMQ_DEFAULT_PASS: str | None = os.environ.get("RABBITMQ_DEFAULT_PASS")
+    RABBITMQ_HOSTNAME: str | None = os.environ.get("RABBITMQ_HOSTNAME")
+    RABBITMQ_PORT: int | None = os.environ.get("RABBITMQ_PORT")
     SECRET_KEY: str | None = os.environ.get("SECRET_KEY")
     POSTGRES_USER : str | None = os.environ.get("POSTGRES_USER")
     POSTGRES_PASSWORD:str | None = os.environ.get("POSTGRES_PASSWORD")
@@ -31,14 +35,6 @@ class Config(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str | None = os.environ.get("AWS_SECRET_ACCESS_KEY")
     AWS_S3_BUCKET: str | None = os.environ.get("AWS_S3_BUCKET")
     AWS_S3_REGION: str | None = os.environ.get("AWS_S3_REGION")
-    AWS_S3_FOLDER_BASE: str | None = os.environ.get("AWS_S3_FOLDER_BASE")
-    AWS_S3_FOLDER_PHOTOS: str | None = os.environ.get("AWS_S3_FOLDER_PHOTOS")
-    AWS_S3_FOLDER_CVS: str | None = os.environ.get("AWS_S3_FOLDER_CVS")
-    AWS_S3_FOLDER_PROCTOR: str | None = os.environ.get("AWS_S3_FOLDER_PROCTOR")
-    AWS_S3_FOLDER_ASSESSMENT: str | None = os.environ.get("AWS_S3_FOLDER_ASSESSMENT")
-    AWS_S3_FOLDER_COURSE_LOGOS: str | None = os.environ.get("AWS_S3_FOLDER_COURSE_LOGOS")
-    AWS_S3_FOLDER_COURSE_LESSONS: str | None = os.environ.get("AWS_S3_FOLDER_COURSE_LESSONS")
-    AWS_S3_FOLDER_CANDIDATE_COURSE_REPORTS: str | None = os.environ.get("AWS_S3_FOLDER_CANDIDATE_COURSE_REPORTS")
     GOOGLE_CLIENT_ID: str | None = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str | None = os.environ.get("GOOGLE_CLIENT_SECRET")
     # CELERY_BROKER_URL: str = "amqp://user:bitnami@localhost:5672/"
