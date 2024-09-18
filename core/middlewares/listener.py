@@ -36,22 +36,27 @@ class ListeningClient:
 
     def start_consuming(self):
         def callback(ch, method, properties, body):
-            print(body)
+            # print("**********")
+            # print(body)
+            
+            # print("**********")
             print(json.loads(body))
+            
+            # body = json.loads(body)
+            # print("**********")
+            # print('payload')
+            # print(body['payload'])
             
             # body = json.loads(body)
             # match body['service']:
             #     case "users":
-            #         act_on_users(body['action'], body['payload'], body['id'])
+            #         act_on_users(action=body['action'], payload=body['payload'], id=body['user_id'])
                 
             #     case "transactions":
-            #         act_on_transactions(body['action'], body['payload'], body['id'])
+            #         act_on_transactions(body['action'], body['payload'], body['transaction_id'])
                 
             #     case "books":
-            #         act_on_books(body['action'], body['payload'], body['id'])
-                    
-            
-            print(f"Received message from B: {body.decode()}")
+            #         act_on_books(body['action'], body['payload'], body['book_id'])
 
         try:
             self.channel.basic_consume(

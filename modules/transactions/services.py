@@ -96,7 +96,7 @@ async def register_new_book(
         client.send_message(json.dumps({
             "service": "books",
             "action": "create_book",
-            "payload": payload,
+            "payload": payload.dict(),
         }))
         return  {"message": "Book created successfully", "data": new_book}
     
@@ -178,7 +178,7 @@ async def update_book(
             "service": "books",
             "action": "update_book",
             "book_id": book_id,
-            "payload": payload
+            "payload": payload.dict()
         }))
         
         
