@@ -1,17 +1,15 @@
 from datetime import datetime
 from uuid import UUID
 from typing import List
-from slugify import slugify
 
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 
 from core.dependencies.sessions import get_db
-from core.helpers import password
 from core.helpers.mail_utils import *
 from core.exceptions.auth import DuplicateEmailException
-from core.exceptions.base import ForbiddenException, InternalServerErrorException
+from core.exceptions.base import InternalServerErrorException
 from core.exceptions import NotFoundException
 
 from .models import *
@@ -52,6 +50,15 @@ class UserRepository:
             raise NotFoundException("User not found!")
         
         return user
+    
+    
+    # async def deactivate_user_by_id(self, user_id: UUID) -> User:
+    #     user: User = self.db.query(User).filter(User.id == user_id).first()
+    
+    #     if user is None:
+    #         raise NotFoundException("User not found!")
+        
+    #     return user
     
     
     async def get_user_by_email(self, email: str) -> User:

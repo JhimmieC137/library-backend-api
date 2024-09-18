@@ -53,6 +53,15 @@ class BaseBook(BaseModel):
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 
+class UpdateBook(BaseModel):
+    name: Optional[str] = None
+    author: Optional[str] = None
+    publishers: Optional[str] = None
+    category: Optional[BookCategory] = None
+    status: Optional[BookStatus] = None
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+
+
 class CreateBook(BaseModel):
     name: Optional[str] = None
     author: Optional[str] = None

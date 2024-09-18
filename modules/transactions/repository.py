@@ -95,8 +95,7 @@ class BookRepository:
         try:
             book_query = self.db.query(Book).filter(Book.is_deleted == False)\
                         .filter(or_(
-                            Book.name.ilike(f"%{search}%"), 
-                            # Book.publishers.ilike(f"%{search}%"),
+                            Book.name.ilike(f"%{search}%"),
                         ))
             
             if publishers:
@@ -166,9 +165,30 @@ class BookRepository:
         
         try:
             book.is_deleted = True
+            book.deleted_at = datetime.now()
             self.db.commit()
             
         except:
             self.db.rolback()
             raise InternalServerErrorException("Something went wrong removing book from library")
+    
+    
+    async def update_book(self, book_id: UUID, payload: UpdateBook) -> Book:
+        book_query = self.db.query(Book).filter(Book.id == book_id).first()
+        
+        book: Book = book_query.first()
+        if book is None:
+            raise DuplicateValueException("Book not found!")
+        elif book and book.is_deleted:
+            raise BadRequestException("Book is already deleted!")
+        
+        try:
+            book_query.update(payload.dict(exclude_unset=True))
+            self.db.commit()
+            
+            return book
+            
+        except:
+            self.db.rolback()
+            raise InternalServerErrorException("Something went wrong updating book")
             

@@ -113,7 +113,7 @@ def start_receiving():
 
 def create_app() -> FastAPI:
     app_ = FastAPI(
-        title="Library Application - Client/Frontend Api",
+        title="Library Application - Admin/Backend Api",
         description="An assessment by Cowrywise",
         version="1.0.0",
         docs_url=None if config.ENV == "production" else "/docs",

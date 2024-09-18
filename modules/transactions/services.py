@@ -1,13 +1,9 @@
 import json
-from typing import Annotated, Optional
+from typing import Annotated
 from core.helpers.mail_utils import *
 from uuid import UUID
 
-from fastapi import Depends, status, APIRouter, Path
-from sqlalchemy.orm import Session
-
-from core.dependencies.sessions import get_db
-# from core.dependencies.auth import get_current_user
+from fastapi import status, APIRouter, Path
 from core.exceptions import *
 from core.helpers.schemas import CustomListResponse, CustomResponse
 from core.middlewares.messanger import client
@@ -39,7 +35,11 @@ async def create_transaction(
     """
     try:        
         new_transaction = await transactionRepo.create(payload=payload)
-        
+        client.send_message(json.dumps({
+            "service": "transactions",
+            "action": "create_transaction",
+            "payload": payload,
+        }))
         return {"message": "Transaction created successfully", "data": new_transaction, "code": 201}
     
     except Exception as error:
@@ -93,7 +93,11 @@ async def register_new_book(
 ) -> CustomResponse[BaseBook]:
     try:
         new_book = await bookRepo.create_book(payload=payload)
-
+        client.send_message(json.dumps({
+            "service": "books",
+            "action": "create_book",
+            "payload": payload,
+        }))
         return  {"message": "Book created successfully", "data": new_book}
     
     except Exception as error:
@@ -153,6 +157,32 @@ async def remove_book(
 ):
     try:
         await bookRepo.delete_book(book_id=book_id)
+        client.send_message(json.dumps({
+            "service": "books",
+            "action": "remove_book",
+            "book_id": book_id,
+        }))
+    
+    except Exception as error:
+        raise error
+
+
+@router.patch('/books/{book_id}', tags=["Books"])
+async def update_book(
+    book_id: Annotated[UUID, Path(title="The ID of the Book")],
+    payload:  UpdateBook,
+) ->  CustomResponse[BaseBook]:
+    try:
+        book = await bookRepo.update_book(book_id=book_id, payload=payload)
+        client.send_message(json.dumps({
+            "service": "books",
+            "action": "update_book",
+            "book_id": book_id,
+            "payload": payload
+        }))
+        
+        
+        return {"message": "Book updated successfully", "data": book}
     
     except Exception as error:
         raise error
