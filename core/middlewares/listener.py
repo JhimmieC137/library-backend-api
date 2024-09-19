@@ -1,7 +1,8 @@
 import pika
 import time
-from core.env import config
 import json
+
+from core.env import config
 from .reducers import *
  
 # Connect to RabbitMQ
@@ -36,27 +37,18 @@ class ListeningClient:
 
     def start_consuming(self):
         def callback(ch, method, properties, body):
-            # print("**********")
-            # print(body)
-            
-            # print("**********")
             print(json.loads(body))
             
-            # body = json.loads(body)
-            # print("**********")
-            # print('payload')
-            # print(body['payload'])
-            
-            # body = json.loads(body)
-            # match body['service']:
-            #     case "users":
-            #         act_on_users(action=body['action'], payload=body['payload'], id=body['user_id'])
+            body = json.loads(body)
+            match body['service']:
+                case "users":
+                    act_on_users(action=body['action'], payload=body['payload'], id=body['user_id'])
                 
-            #     case "transactions":
-            #         act_on_transactions(body['action'], body['payload'], body['transaction_id'])
+                case "transactions":
+                    act_on_transactions(body['action'], body['payload'], body['transaction_id'])
                 
-            #     case "books":
-            #         act_on_books(body['action'], body['payload'], body['book_id'])
+                case "books":
+                    act_on_books(body['action'], body['payload'], body['book_id'])
 
         try:
             self.channel.basic_consume(
@@ -83,5 +75,5 @@ class ListeningClient:
             self.channel.close()
         if self.connection:
             self.connection.close()
-
+            
 client = ListeningClient()

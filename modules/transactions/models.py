@@ -32,8 +32,7 @@ class BookCategory(str, enum.Enum):
 
 class Book(Base):
     __tablename__ = "books"
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
-                default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
     name = Column(String,  nullable=False)
     author = Column(String,  nullable=False)
     publishers = Column(String,  nullable=False)
@@ -42,7 +41,7 @@ class Book(Base):
         
     # Current holder info
     holder_id = Column(UUID(as_uuid=True), nullable=True)
-    holder_email = Column(String, nullable=True, server_default = "example@mail.com")
+    holder_email = Column(String, nullable=True)
 
     is_deleted = Column(Boolean, nullable=False, server_default='False')
     
@@ -61,16 +60,15 @@ class Book(Base):
 
 class Transaction(Base):
     __tablename__ = "transactions"
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False,
-                default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
     
     # Book info
     book_id = Column(UUID(as_uuid=True), nullable=False)
-    book_name = Column(String, nullable=False, server_default = "Anonymous by John Doe")
+    book_name = Column(String, nullable=False)
     
     # User info
     user_id = Column(UUID(as_uuid=True), nullable=False)
-    user_email = Column(String, nullable=False, server_default = "example@mail.com")
+    user_email = Column(String, nullable=False)
     
     status = Column(Enum(TransactionStatus), server_default = TransactionStatus.BORROWING, nullable=False)
     

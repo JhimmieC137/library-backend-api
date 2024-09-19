@@ -1,61 +1,72 @@
 from uuid import UUID
+from datetime import datetime
 from modules.users.repository import UserRepository
+from modules.users.schemas import BaseUser, BaseUserProfile
+from modules.users.models import User
 from modules.transactions.repository import TransactionRepository, BookRepository
+from modules.transactions.schemas import CreateTransaction, CreateBook, UpdateBook, UpdateTransaction, BaseTransaction, BaseBook
+
+
 
 userRepo = UserRepository()
 transactionRepo = TransactionRepository()
 bookRepo = BookRepository()
+
+
  
-async def act_on_users(action: str, payload, id: UUID = None):
+def act_on_users(action: str, payload, id: UUID = None):
     match action:
         case "create_user":
             try:
-                await userRepo.create(payload=payload)
+                print("here")
+                userRepo.create(payload=BaseUser(**payload))
             
             except Exception as error:
-                print(error)
                 raise error
-            
+             
         case "update_user":
             try:
-                await userRepo.partial_update_user_profile(payload=payload, user_id=id)
+                userRepo.partial_update_user_profile(payload=BaseUser(**payload), user_id=id)
             
             except Exception as error:
-                print(error)
                 raise error
     
  
-async def act_on_transactions(action: str, payload, id: UUID = None):
+def act_on_transactions(action: str, payload, id: UUID = None):
     match action:
-        case "create_transactions":
+        case "create_transaction":
             try:
-                await transactionRepo.create(payload=payload)
+                print("create transactions")
+                transactionRepo.create(payload=BaseTransaction(**payload))
             
             except Exception as error:
                 raise error
     
  
-async def act_on_books(action: str, payload, id: UUID = None):
+def act_on_books(action: str, payload, id: UUID = None):
     match action:
         case "create_book":
             try:
-                await bookRepo.create_book(payload=payload)
+                print("create_book")
+                bookRepo.create_book(payload=BaseBook(**payload))
             
             except Exception as error:
                 raise error
         
-        case "update_book":
-            try:
-                await bookRepo.update_book(payload=payload, book_id=id)
+        # case "update_book":
+        #     try:
+        #         print("update_book")
+        #         bookRepo.update_book(payload=BaseBook(**payload), book_id=id)
             
-            except Exception as error:
-                raise error
+        #     except Exception as error:
+        #         raise error
         
-        case "remove_book":
-            try:
-                await bookRepo.delete_book(book_id=id)
+        # case "remove_book":
+        #     try:
+        #         print("remove_book")
+        #         bookRepo.delete_book(book_id=id)
             
-            except Exception as error:
-                raise error
+        #     except Exception as error:
+        #         raise error
             
     

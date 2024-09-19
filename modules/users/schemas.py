@@ -11,10 +11,13 @@ from modules.users.models import UserType # Wildcard "*" cannot be used for some
 ####################### Users ################# 
 
 class BaseUserProfile(BaseModel):
+    id: Optional[UUID] = None
     user_id: UUID = None
     address: Optional[str] = None
     phone: Optional[str] = None
     photo: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 class BaseUser(BaseModel):
@@ -26,6 +29,7 @@ class BaseUser(BaseModel):
     is_active: Optional[bool] = None
     user_profile : Optional[BaseUserProfile] = None
     created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
 
 
@@ -46,9 +50,4 @@ class CreateUserSchema(BaseModel):
     first_name: str
     last_name: str
     model_config = ConfigDict(from_attributes=True, validate_assignment=True)
-
-class ListUserResponse(BaseModel):
-    status: str
-    results: int
-    users: List[BaseUser]
     

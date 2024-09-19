@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-from uuid import UUID
-from typing import List
+from uuid import UUID, uuid4
+from typing import List, Union
 from slugify import slugify
 
 from sqlalchemy.orm import Session
@@ -8,9 +8,7 @@ from sqlalchemy import or_
 
 
 from core.dependencies.sessions import get_db
-from core.helpers import password
 from core.helpers.mail_utils import *
-from core.exceptions.auth import DuplicateEmailException
 from core.exceptions.base import DuplicateValueException, UnprocessableEntity, BadRequestException, InternalServerErrorException
 from core.exceptions import NotFoundException
 
@@ -21,42 +19,65 @@ from .schemas import *
 class TransactionRepository:
     def __init__(self) -> None:
         self.db: Session = get_db().__next__()
+        
 
-    async def create(self, payload: CreateTransaction) -> BaseTransaction:
-        user = self.db.query(User).filter(User.id == payload.user_id).first()
+    def create(self, payload: Union[CreateTransaction, BaseTransaction]) -> BaseTransaction: # type: ignore
+        user: User = self.db.query(User).filter(User.id == payload.user_id).first()
         if user is None:
             raise NotFoundException("User not found!")
             
         book: Book = self.db.query(Book).filter(Book.id == payload.book_id).first()
+        
         if book is None:
             raise NotFoundException("Book not found!")
         elif book and book.is_deleted:
             raise BadRequestException("Book no longer available at this library!")
         elif book and book.status == BookStatus.BORROWED and payload.status == TransactionStatus.BORROWING :
             raise UnprocessableEntity("Book has been lent to another user")
+        elif book and book.status == BookStatus.BORROWED and payload.status == TransactionStatus.BORROWING :
+            raise UnprocessableEntity("Book has been lent to another user")
+        elif book and book.status == BookStatus.AVAILABLE and payload.status == TransactionStatus.RETURNING :
+            raise UnprocessableEntity("Book has been returned already")
             
         try:
-            payload = payload.dict()
-            days_till_return = payload.pop('days_till_return')
+            payload_dict = payload.dict()
+            days_till_return = payload_dict.pop('days_till_return') if 'days_till_return' in payload_dict.keys() else None
             
-            new_transaction = Transaction(**payload)
-            if payload['status'] == TransactionStatus.BORROWING:
-                new_transaction.return_date = datetime.now() + timedelta(days_till_return)
+            if type(payload) == CreateTransaction:
+                new_transaction = Transaction(id=uuid4(), **payload_dict)
+                new_transaction.return_date = datetime.now() + timedelta(days_till_return) if payload_dict['status'] == TransactionStatus.BORROWING else None
+            else:
+                new_transaction = Transaction(**payload_dict)
                 
-            book.status = BookStatus.BORROWED if payload['status'] == TransactionStatus.BORROWING else BookStatus.AVAILABLE
-
+        
+            if payload_dict['status'] == TransactionStatus.BORROWING:
+                book.status = BookStatus.BORROWED 
+                book.holder_id = user.id
+                book.holder_email = user.email
+                book.updated_at = datetime.now() if type(payload) == CreateTransaction else payload_dict['created_at']
+            
+            else:
+                book.status = BookStatus.AVAILABLE 
+                book.holder_id = None
+                book.holder_email = None
+                book.updated_at = datetime.now() if type(payload) == CreateTransaction else payload_dict['created_at']
+                
+ 
             self.db.add(new_transaction)
             self.db.commit()
             self.db.refresh(new_transaction)
+            
+            return new_transaction
+            
         
         except Exception as e:
+            print(e)
             self.db.rollback()
             raise InternalServerErrorException("Something went wrong creating the transaction")
         
-        return new_transaction
 
 
-    async def get_transaction_list(self, page: int, limit: int, user_id: UUID = None, status: TransactionStatus = None) -> tuple[List[Transaction], int]:
+    def get_transaction_list(self, page: int, limit: int, user_id: UUID = None, book_id: UUID = None, status: TransactionStatus = None) -> tuple[List[Transaction], int]:
         skip = (page - 1) * limit
         transaction_query = self.db.query(Transaction)
         
@@ -69,6 +90,11 @@ class TransactionRepository:
             transaction_query = transaction_query.filter(
                 Transaction.user_id == user_id
             )
+        
+        if book_id:
+            transaction_query = transaction_query.filter(
+                Transaction.book_id == book_id
+            )
                 
         
         transaction_count: int = transaction_query.count()
@@ -77,19 +103,19 @@ class TransactionRepository:
         return transactions, transaction_count
     
     
-    async def get_transaction_by_id(self, transaction_id: UUID) -> Transaction:
+    def get_transaction_by_id(self, transaction_id: UUID) -> Transaction:
         transaction: Transaction = self.db.query(Transaction).filter(Transaction.id == transaction_id).first()
     
         if transaction is None:
             raise NotFoundException("Transaction not found!")
         
-        return Transaction
+        return transaction
         
 class BookRepository:
     def __init__(self) -> None:
         self.db: Session = get_db().__next__()
         
-    async def get_book_list(self, page: int, limit: int, search: str, publishers: str = None, category: BookCategory = None, status: BookStatus = None, user_id: UUID = None) -> tuple[List[Book], int]:
+    def get_book_list(self, page: int, limit: int, search: str, publishers: str = None, category: BookCategory = None, status: BookStatus = None, user_id: UUID = None) -> tuple[List[Book], int]:
         skip = (page - 1) * limit
         
         try:
@@ -128,7 +154,7 @@ class BookRepository:
         return books, book_count
     
     
-    async def get_book_by_id(self, book_id: UUID) -> Book:
+    def get_book_by_id(self, book_id: UUID) -> Book:
         book: Book = self.db.query(Book).filter(Book.id == book_id).first()
     
         if book is None:
@@ -140,13 +166,13 @@ class BookRepository:
         return book
     
     
-    async def create_book(self, payload: CreateBook) -> Book:
+    def create_book(self, payload: CreateBook) -> Book:
         book: Book = self.db.query(Book).filter(Book.name == payload.name).first()
         
         if book:
             raise DuplicateValueException("Book already exists!")
         
-        new_book = Book(**payload.dict())
+        new_book = Book(id=uuid4(), **payload.dict())
         
         self.db.add(new_book)
         self.db.commit()
@@ -155,7 +181,7 @@ class BookRepository:
         return new_book
     
     
-    async def delete_book(self, book_id: UUID) -> Book:
+    def delete_book(self, book_id: UUID) -> Book:
         book: Book = self.db.query(Book).filter(Book.id == book_id).first()
         
         if book is None:
@@ -173,8 +199,8 @@ class BookRepository:
             raise InternalServerErrorException("Something went wrong removing book from library")
     
     
-    async def update_book(self, book_id: UUID, payload: UpdateBook) -> Book:
-        book_query = self.db.query(Book).filter(Book.id == book_id).first()
+    def update_book(self, book_id: UUID, payload: UpdateBook) -> Book:
+        book_query = self.db.query(Book).filter(Book.id == book_id)
         
         book: Book = book_query.first()
         if book is None:

@@ -30,7 +30,6 @@ from core.middlewares.response_log import log_request_middleware
 from core.middlewares.listener import client
 
 
-
 def init_db(app_: FastAPI) -> None:
     Base.metadata.create_all(bind=engine, checkfirst=True)
 

@@ -45,6 +45,7 @@ class MessagingClient:
                     body=message
                 )
                 print(f"Sent message to B: {message}")
+                
                 # self.close()
             except pika.exceptions.StreamLostError:
                 print("Error sending message, connection lost.")

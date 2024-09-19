@@ -21,6 +21,8 @@ class Config(BaseSettings):
     POSTGRES_SERVER : str | None= os.environ.get("POSTGRES_SERVER")
     POSTGRES_PORT : int | None = os.environ.get("POSTGRES_PORT", 5432) # default postgres port is 5432
     POSTGRES_DB : str | None = os.environ.get("POSTGRES_DATABASE")
+    POSTGRES_TEST_DB : str | None = os.environ.get("POSTGRES_TEST_DATABASE")
+    TEST_DB_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_TEST_DB}"
     WRITER_DB_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
     READER_DB_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
     JWT_SECRET_KEY: str | None = os.environ.get("SECRET_KEY")

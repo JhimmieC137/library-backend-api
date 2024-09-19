@@ -7,6 +7,7 @@ from fastapi import status, APIRouter, Path
 from core.exceptions import *
 from core.helpers.schemas import CustomListResponse, CustomResponse
 from core.middlewares.messanger import client
+from core.helpers.json_encoder import JSONEncoder
 
 from .models import *
 from .schemas import *
@@ -34,12 +35,13 @@ async def create_transaction(
     Create transaction to borrow or Return book
     """
     try:        
-        new_transaction = await transactionRepo.create(payload=payload)
+        new_transaction = transactionRepo.create(payload=payload)
         client.send_message(json.dumps({
             "service": "transactions",
             "action": "create_transaction",
-            "payload": payload,
-        }))
+            "payload": BaseTransaction.from_orm(new_transaction).dict(),
+            "transaction_id": None
+        }, cls=JSONEncoder))
         return {"message": "Transaction created successfully", "data": new_transaction, "code": 201}
     
     except Exception as error:
@@ -49,6 +51,7 @@ async def create_transaction(
 @router.get('/transactions', response_model=CustomListResponse[BaseTransaction], tags=["Transactions"])
 async def fetch_transactions(
     user_id: Annotated[UUID, Path(title="The ID of the User")] = None, 
+    book_id: Annotated[UUID, Path(title="The ID of the Book")] = None, 
     limit: int = 10, page: int = 1, 
     status: TransactionStatus = None
 ) -> CustomListResponse[BaseTransaction]:
@@ -56,7 +59,7 @@ async def fetch_transactions(
     Fetch current user's transactions
     """
     try:
-        transactions, transaction_count = await transactionRepo.get_transaction_list(page=page, limit=limit, user_id=user_id, status=status)
+        transactions, transaction_count = transactionRepo.get_transaction_list(page=page, limit=limit, user_id=user_id, book_id=book_id, status=status)
         
         return {'message': 'Transaction list fetched successfully', 'total_count': transaction_count, 'count': len(transactions), 'next_page': page + 1,'data': transactions}
     
@@ -69,9 +72,10 @@ async def retrieve_transaction(
     transaction_id: Annotated[UUID, Path(title="The ID of the Transaction")], 
 ) -> CustomResponse[BaseTransaction]:
     """
-    Fetch current user's transactions
+    Fetch transaction
     """
     try:
+        print("Here")
         transaction = transactionRepo.get_transaction_by_id(transaction_id=transaction_id)
         
         return {"message": "Transaction retrieved successfully", "data": transaction}
@@ -92,12 +96,13 @@ async def register_new_book(
     payload: CreateBook,
 ) -> CustomResponse[BaseBook]:
     try:
-        new_book = await bookRepo.create_book(payload=payload)
+        new_book = bookRepo.create_book(payload=payload)
         client.send_message(json.dumps({
             "service": "books",
             "action": "create_book",
-            "payload": payload.dict(),
-        }))
+            "payload": BaseBook.from_orm(new_book).dict(),
+            "book_id": None
+        }, cls=JSONEncoder))
         return  {"message": "Book created successfully", "data": new_book}
     
     except Exception as error:
@@ -117,15 +122,15 @@ async def fetch_books(
     """
     try:
         
-        books, book_count = await bookRepo.get_book_list(
-                                                        page=page, 
-                                                        limit=limit, 
-                                                        search=search, 
-                                                        status=status, 
-                                                        category=category, 
-                                                        publishers=publishers,
-                                                        user_id=current_holder_id
-                                                    )
+        books, book_count = bookRepo.get_book_list(
+                                                page=page, 
+                                                limit=limit, 
+                                                search=search, 
+                                                status=status, 
+                                                category=category, 
+                                                publishers=publishers,
+                                                user_id=current_holder_id
+                                            )
         print("Here")
         client.send_message(json.dumps({"message": "Gume", "number": 5637}))
         return {'message': 'Book list fetched successfully', 'total_count': book_count, 'count': len(books), 'next_page': page + 1,'data': books}
@@ -142,7 +147,7 @@ async def retrieve_book(
     Retrieve book
     """
     try:
-        book = await bookRepo.get_book_by_id(book_id=book_id)
+        book = bookRepo.get_book_by_id(book_id=book_id)
         
         return {"message": "Book retrieved successfully", "data": book}
     
@@ -156,12 +161,13 @@ async def remove_book(
     book_id: Annotated[UUID, Path(title="The ID of the Book")], 
 ):
     try:
-        await bookRepo.delete_book(book_id=book_id)
+        bookRepo.delete_book(book_id=book_id)
         client.send_message(json.dumps({
             "service": "books",
             "action": "remove_book",
+            "payload": None,
             "book_id": book_id,
-        }))
+        }, cls=JSONEncoder))
     
     except Exception as error:
         raise error
@@ -173,13 +179,13 @@ async def update_book(
     payload:  UpdateBook,
 ) ->  CustomResponse[BaseBook]:
     try:
-        book = await bookRepo.update_book(book_id=book_id, payload=payload)
+        book = bookRepo.update_book(book_id=book_id, payload=payload)
         client.send_message(json.dumps({
             "service": "books",
             "action": "update_book",
             "book_id": book_id,
-            "payload": payload.dict()
-        }))
+            "payload": BaseBook.from_orm(book).dict()
+        }, cls=JSONEncoder))
         
         
         return {"message": "Book updated successfully", "data": book}

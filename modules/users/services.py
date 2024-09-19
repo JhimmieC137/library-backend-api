@@ -7,6 +7,7 @@ from fastapi import status, APIRouter, Path
 from core.exceptions import *
 from core.helpers.schemas import CustomListResponse, CustomResponse
 from core.middlewares.messanger import client
+from core.helpers.json_encoder import JSONEncoder
 
 from .schemas import *
 from .repository import UserRepository
@@ -31,12 +32,13 @@ async def create_user(
     Enroll users
     """
     try:        
-        new_user = await userRepo.create(payload=payload)
+        new_user = userRepo.create(payload=payload)
         client.send_message(json.dumps({
             "service": "users",
             "action": "create_user",
-            "payload": payload.dict(),
-        }))
+            "payload": new_user.dict(),
+            "user_id": None
+        }, cls=JSONEncoder))
         return {"message": "User created successfully", "data": new_user, "code": 201}
     
     except Exception as error:
@@ -52,7 +54,7 @@ async def fetch_users(
     Fetch user's details/profile 
     """
     try:
-        users, user_count = await userRepo.get_user_list(limit=limit, page=page, search=search)
+        users, user_count = userRepo.get_user_list(limit=limit, page=page, search=search)
 
         return {'message': 'Users list fetched successfully', 'total_count': user_count, 'count': len(users), 'next_page': page + 1,'data': users}
 
@@ -87,13 +89,13 @@ async def update_user(
     Update user 
     """
     try:        
-        user = await userRepo.partial_update_user_profile(payload=payload, user_id=user_id)
+        user = userRepo.partial_update_user_profile(payload=payload, user_id=user_id)
         client.send_message(json.dumps({
             "service": "users",
             "action": "update_user",
             "user_id": user_id,
-            "payload": payload.dict(),
-        }))
+            "payload": BaseUser.from_orm(user).dict(),
+        }, cls=JSONEncoder))
         return {"message":"User profile updated successfully","data": user}
     
     except Exception as error:
